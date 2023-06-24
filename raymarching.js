@@ -1,5 +1,5 @@
 const canvas = document.getElementById("glcanvas");
-const gl = canvas.getContext("webgl");
+const gl = canvas.getContext("webgl2");
 
 if (!gl) {
   console.log("Unable to initialize WebGL.");
@@ -8,28 +8,35 @@ if (!gl) {
 const vertexShader = gl.createShader(gl.VERTEX_SHADER);
 gl.shaderSource(
   vertexShader,
-  `
-attribute vec2 position;
+  `#version 300 es
+in vec2 position;
 void main() {
 gl_Position = vec4(position, 0.0, 1.0);
 }
 `
 );
 gl.compileShader(vertexShader);
+if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
+  console.error(
+    "error compiling vertex shader",
+    gl.getShaderInfoLog(vertexShader)
+  );
+}
 
 const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
 gl.shaderSource(
   fragmentShader,
-  `
+  `#version 300 es
     precision highp float;
 
     uniform vec2 resolution;
+    out vec4 outColor;
 
     float sphereSDF(vec3 p, float r) {
         return length(p) - r;
     }
 
-    float radialSymmetrySDF(vec3 p) {
+    float sphericalSymmetry(vec3 p) {
       float r = length(p);
       float ph = atan(p.y, p.x);
       float th = acos(p.z / r);
@@ -37,6 +44,50 @@ gl.shaderSource(
       float pattern = r/12.0 * sin(12.0 * ph) * cos(12.0 * th);
 
       return length(vec2(r-20.0, pattern)) - 0.25;
+    }
+
+    float radialSymmetrySDF(vec3 p) {
+      float n = 5.0;
+      float cs[15];
+
+      float cr = 8.0;
+      float rf = 0.9;
+      float rd = 0.685;
+
+      float r1 = length(p.xz);
+      cs[0] = r1 - cr;
+      cr*=rd;
+
+      float th1 = r1/n*sin(n*atan(p.x,p.z));
+      float r2 = length(vec2(p.y, th1));
+
+      cs[1] = r2 - cr;
+      cr*=rd;
+
+      float th2 = r2/n*sin(n*atan(p.y,th1));
+      float a2 = cs[0]-rf*r2;
+      float r3 = length(vec2(th2, a2));
+
+      cs[2] = r3 - cr;
+      cr*=rd;
+
+      float th3 = r3/n*sin(n*atan(a2,th2));
+      float a3 = length(vec2(p.y-rf*r3, cs[0]-rf*r3))-3.0;
+      float r4 = length(vec2(th3, a3));
+
+      cs[3] = r4 - cr;
+      cr*=rd;
+
+      for(int i=4; i<15; i++) {
+        th3 = r4/n*sin(n*atan(a3,th3));
+        a3 = length(vec2(cs[i-4] - rf*r4,cs[i-3]-rf*r4))-1.5;
+        r4 = length(vec2(th3, a3));
+
+        cs[i] = r4 - cr;
+        cr*=rd;
+      }
+
+      return cs[8];
     }
 
     float mapTheWorld(in vec3 p) {
@@ -57,7 +108,7 @@ gl.shaderSource(
       float total_distance_traveled = 0.0;
       const int number_of_steps = 256;
       const float minimum_distance = 0.001;
-      const float maximum_distance = 100.0;
+      const float maximum_distance = 200.0;
 
       for (int i = 0; i < number_of_steps; i++) {
         vec3 current_position = ro + total_distance_traveled * rd;
@@ -87,13 +138,13 @@ gl.shaderSource(
     void main() {
       vec2 uv = (gl_FragCoord.xy - 0.5 * resolution) / min(resolution.y, resolution.x);
 
-      vec3 camera_position = vec3(2.0, 0.0, -60.0);
+      vec3 camera_position = vec3(2.0,10.0, -60.0);
       vec3 ro = camera_position;
       vec3 rd = normalize(vec3(uv, 1.0));
 
       vec3 color = rayMarch(ro, rd);
 
-      gl_FragColor = vec4(color, 1.0);
+      outColor = vec4(color, 1.0);
     }
 `
 );
@@ -109,6 +160,11 @@ const program = gl.createProgram();
 gl.attachShader(program, vertexShader);
 gl.attachShader(program, fragmentShader);
 gl.linkProgram(program);
+
+if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+  console.error("error linking program", gl.getProgramInfoLog(program));
+}
+
 gl.useProgram(program);
 
 const buffer = gl.createBuffer();
