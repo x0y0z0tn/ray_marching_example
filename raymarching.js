@@ -48,46 +48,42 @@ gl.shaderSource(
 
     float radialSymmetrySDF(vec3 p) {
       float n = 5.0;
-      float cs[15];
+      float cs[20];
 
-      float cr = 8.0;
-      float rf = 0.9;
-      float rd = 0.685;
+      float cr = 10.0;
 
       float r1 = length(p.xz);
       cs[0] = r1 - cr;
-      cr*=rd;
 
-      float th1 = r1/n*sin(n*atan(p.x,p.z));
-      float r2 = length(vec2(p.y, th1));
+      float th1 = r1/n*sin(n*atan(p.x, p.z));
 
-      cs[1] = r2 - cr;
-      cr*=rd;
+      float r2 = length(vec2(p.y, th1))*0.5;
+      cs[1] = r2 - 0.25;
 
-      float th2 = r2/n*sin(n*atan(p.y,th1));
-      float a2 = cs[0]-rf*r2;
-      float r3 = length(vec2(th2, a2));
+      float th2 = r2/n*sin(n*atan(p.y, th1));
+      float a2=cs[0]-r2*0.25;
+      float r3 = length(vec2(a2, th2))*0.5;
+      cs[2] = r3 - 0.25;
 
-      cs[2] = r3 - cr;
-      cr*=rd;
+      float th3 = r3/n*sin(n*atan(a2, th2));
+      float a3 = length(vec2(p.y-r3, cs[0]-r3)) - 20.0;
+      float r4 = length(vec2(a3, th3))*0.5;
+      cs[3] = r4 - 0.25;
 
-      float th3 = r3/n*sin(n*atan(a2,th2));
-      float a3 = length(vec2(p.y-rf*r3, cs[0]-rf*r3))-3.0;
-      float r4 = length(vec2(th3, a3));
-
-      cs[3] = r4 - cr;
-      cr*=rd;
-
-      for(int i=4; i<15; i++) {
-        th3 = r4/n*sin(n*atan(a3,th3));
-        a3 = length(vec2(cs[i-4] - rf*r4,cs[i-3]-rf*r4))-1.5;
-        r4 = length(vec2(th3, a3));
-
-        cs[i] = r4 - cr;
-        cr*=rd;
+      float result = 1e6;
+      for (int i = 4; i < 12; i++) {
+        th3 = r4/n*sin(n*atan(a3, th3));
+        a3 = length(vec2(cs[i-4]-r4, cs[i-3]-r4)) - 0.75;
+        r4 = length(vec2(a3, th3))*0.75;
+        cs[i] = r4 - 0.25;
+        result = min(result, cs[i]);
       }
 
-      return cs[8];
+      for (int i = 2 ; i < 4; i++) {
+        result = min(result, cs[i]);
+      }
+
+      return result;
     }
 
     float mapTheWorld(in vec3 p) {
@@ -108,7 +104,7 @@ gl.shaderSource(
       float total_distance_traveled = 0.0;
       const int number_of_steps = 256;
       const float minimum_distance = 0.001;
-      const float maximum_distance = 200.0;
+      const float maximum_distance = 500.0;
 
       for (int i = 0; i < number_of_steps; i++) {
         vec3 current_position = ro + total_distance_traveled * rd;
@@ -117,7 +113,7 @@ gl.shaderSource(
 
         if (distance_to_closest < minimum_distance) {
           vec3 normal = calculateNormal(current_position);
-          vec3 light_position = vec3(0.0, 0.0, 2.0);
+          vec3 light_position = vec3(0.0, 0.0, 70.0);
           vec3 direction_to_light = normalize(current_position - light_position);
 
           float diffuse_intensity = max(0.0, dot(normal, direction_to_light));
@@ -138,7 +134,7 @@ gl.shaderSource(
     void main() {
       vec2 uv = (gl_FragCoord.xy - 0.5 * resolution) / min(resolution.y, resolution.x);
 
-      vec3 camera_position = vec3(2.0,10.0, -60.0);
+      vec3 camera_position = vec3(1.0,5.0, -100.0);
       vec3 ro = camera_position;
       vec3 rd = normalize(vec3(uv, 1.0));
 
