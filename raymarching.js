@@ -1,3 +1,6 @@
+// to live reload I use live-server
+// https://github.com/tapio/live-server
+
 const canvas = document.getElementById("glcanvas");
 const gl = canvas.getContext("webgl2");
 
