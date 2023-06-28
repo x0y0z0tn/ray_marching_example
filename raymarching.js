@@ -89,16 +89,16 @@ gl.shaderSource(
       return result;
     }
 
-    float mapTheWorld(in vec3 p) {
+    float sceneSDF(in vec3 p) {
       return sphericalSymmetry(p);
     }
 
     vec3 calculateNormal(in vec3 p) {
       const vec3 small_step = vec3(0.001, 0.0, 0.0);
 
-      float gradient_x = mapTheWorld(p + small_step.xyy) - mapTheWorld(p - small_step.xyy);
-      float gradient_y = mapTheWorld(p + small_step.yxy) - mapTheWorld(p - small_step.yxy);
-      float gradient_z = mapTheWorld(p + small_step.yyx) - mapTheWorld(p - small_step.yyx);
+      float gradient_x = sceneSDF(p + small_step.xyy) - sceneSDF(p - small_step.xyy);
+      float gradient_y = sceneSDF(p + small_step.yxy) - sceneSDF(p - small_step.yxy);
+      float gradient_z = sceneSDF(p + small_step.yyx) - sceneSDF(p - small_step.yyx);
 
       return normalize(vec3(gradient_x, gradient_y, gradient_z));
     }
@@ -112,7 +112,7 @@ gl.shaderSource(
       for (int i = 0; i < number_of_steps; i++) {
         vec3 current_position = ro + total_distance_traveled * rd;
 
-        float distance_to_closest = mapTheWorld(current_position);
+        float distance_to_closest = sceneSDF(current_position);
 
         if (distance_to_closest < minimum_distance) {
           vec3 normal = calculateNormal(current_position);
