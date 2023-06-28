@@ -90,7 +90,7 @@ gl.shaderSource(
     }
 
     float mapTheWorld(in vec3 p) {
-      return radialSymmetrySDF(p);
+      return sphericalSymmetry(p);
     }
 
     vec3 calculateNormal(in vec3 p) {
