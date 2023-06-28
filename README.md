@@ -1,5 +1,7 @@
 # Ray Marching example
 
+![sphere](https://i.imgur.com/dnvjkpr.png)
+
 A small example of ray marching.
 
 To live reload I use live-server
