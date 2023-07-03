@@ -35,6 +35,14 @@ gl.shaderSource(
     uniform vec2 resolution;
     out vec4 outColor;
 
+    #define PI 3.1415926535897932384626433832795
+
+    vec3 rotateY(vec3 p, float angle) {
+      float s = sin(angle);
+      float c = cos(angle);
+      return vec3(c * p.x - s * p.z, p.y, s * p.x + c * p.z);
+    }
+
     float sphereSDF(vec3 p, float r) {
         return length(p) - r;
     }
@@ -47,6 +55,26 @@ gl.shaderSource(
       float pattern = r/12.0 * sin(12.0 * ph) * cos(12.0 * th);
 
       return length(vec2(r-20.0, pattern)) - 0.25;
+    }
+
+    float sphereAndCylinders(vec3 p) {
+      p = p.zyx;
+      float n = 14.0;
+
+      float r = length(p);
+
+      float ph = atan(p.y,p.x);
+      float th = acos(p.z/r);
+
+      float s2 = 1.0e6;
+      for (float i = 0.25; i < 6.0; i++) {
+        float xr = r/n * (sin(th)*sin(n*th)* cos(n*ph)-0.2*i);
+        //float yr = r/n * (sin(th)*sin(n*th)* sin(n*ph)-0.0);
+        float zr = r-30.0-clamp(r-30.0,0.0,1.5*i);
+
+        s2 = min(s2,length(vec3(xr,0.0,zr))-0.1);
+      }
+      return s2;
     }
 
     float radialSymmetrySDF(vec3 p) {
@@ -90,7 +118,7 @@ gl.shaderSource(
     }
 
     float sceneSDF(in vec3 p) {
-      return sphericalSymmetry(p);
+      return sphereAndCylinders(p);
     }
 
     vec3 calculateNormal(in vec3 p) {
