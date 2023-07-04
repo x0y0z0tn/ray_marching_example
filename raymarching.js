@@ -77,6 +77,44 @@ gl.shaderSource(
       return s2;
     }
 
+    float sphereSpheres(vec3 p) {
+      //p = p.zyx;
+      p = rotateY(p, 9.0*PI/16.0);
+      float n = 18.0;
+
+      float r = length(p);
+      float ph = atan(p.y,p.x);
+      float th = acos(p.z/r);
+
+      float xr = r/n * (sin(th)*sin(n*th)* cos(n*ph)-0.0);
+      float ry = r/n * (sin(th)*sin(n*th)* sin(n*ph)-0.0);
+      float zr = r-33.0;
+
+      float s0 = length(vec3(xr,0.0,zr))-0.1;
+
+      n = 4.0;
+      float x = r/n * (sin(th)*sin(n*th)*cos(n*ph)-0.0);
+      float y = r/n * (sin(th)*cos(n*th)*sin(n*ph)-0.0);
+      float z = r-36.0;
+      float r1 = 1.25*n*sin(th);
+
+      float s1 = length(vec3(x,y,z))-r1;
+
+      r = length(vec3(x,y,z));
+      ph = atan(y,x);
+      th = acos(z/r);
+
+      z = r-r1-clamp(r-r1,0.0,0.5);
+      //n = sqrt(n);
+      n=12.0;
+      x = r/n * (sin(th)*sin(n*th)*cos(n*ph)-0.5);
+      y = r/n * (sin(th)*cos(n*th)*sin(n*ph)-0.0);
+
+      float s2 = length(vec3(x,0.0,z))-0.05;
+
+      return min(min(s0,s1),s2);
+    }
+
     float radialSymmetrySDF(vec3 p) {
       float n = 5.0;
       float cs[20];
@@ -118,7 +156,7 @@ gl.shaderSource(
     }
 
     float sceneSDF(in vec3 p) {
-      return sphereAndCylinders(p);
+      return sphereSpheres(p);
     }
 
     vec3 calculateNormal(in vec3 p) {
