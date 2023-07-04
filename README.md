@@ -1,6 +1,6 @@
 # Ray Marching example
 
-![sphere](https://i.imgur.com/dnvjkpr.png)
+![sphere](https://i.imgur.com/zY2A3Gj.png)
 
 A small example of ray marching.
 
