@@ -201,9 +201,9 @@ gl.shaderSource(
     }
 
     void main() {
-      vec2 uv = (gl_FragCoord.xy - 0.5 * resolution) / min(resolution.y, resolution.x);
+      vec2 uv = (gl_FragCoord.xy - 0.5 * resolution) * 2.0 / min(resolution.y, resolution.x);
 
-      vec3 camera_position = vec3(1.0,5.0, -100.0);
+      vec3 camera_position = vec3(0.0,0.0,-70.0);
       vec3 ro = camera_position;
       vec3 rd = normalize(vec3(uv, 1.0));
 
