@@ -171,7 +171,7 @@ gl.shaderSource(
       return normalize(vec3(gradient_x, gradient_y, gradient_z));
     }
 
-    vec3 rayMarch(in vec3 ro, in vec3 rd) {
+    float rayMarch(in vec3 ro, in vec3 rd) {
       float total_distance_traveled = 0.0;
       const int number_of_steps = 256;
       const float minimum_distance = 0.001;
@@ -189,7 +189,7 @@ gl.shaderSource(
 
           float diffuse_intensity = max(0.0, dot(normal, direction_to_light));
 
-          return vec3(1.0) * diffuse_intensity;
+          return diffuse_intensity;
         }
 
         if (total_distance_traveled > maximum_distance) {
@@ -199,7 +199,7 @@ gl.shaderSource(
         total_distance_traveled += distance_to_closest;
       }
 
-      return vec3(0.25);
+      return 0.25;
     }
 
     void main() {
@@ -209,7 +209,7 @@ gl.shaderSource(
       vec3 ro = camera_position;
       vec3 rd = normalize(vec3(uv, 1.0));
 
-      vec3 color = rayMarch(ro, rd);
+      vec3 color = vec3(rayMarch(ro, rd));
 
       outColor = vec4(color, 1.0);
     }
