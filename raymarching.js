@@ -33,6 +33,8 @@ gl.shaderSource(
     precision highp float;
 
     uniform vec2 resolution;
+    uniform float time;
+
     out vec4 outColor;
 
     #define PI 3.1415926535897932384626433832795
@@ -245,9 +247,14 @@ gl.enableVertexAttribArray(positionLocation);
 gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 
 const resolutionUniformLocation = gl.getUniformLocation(program, "resolution");
+const timeUniformLocation = gl.getUniformLocation(program, "time");
 gl.uniform2f(resolutionUniformLocation, canvas.width, canvas.height);
 
-function render() {
+function render(time) {
+  const timeInSeconds = time * 0.001;
+
+  gl.uniform1f(timeUniformLocation, timeInSeconds);
+
   gl.viewport(0, 0, canvas.width, canvas.height);
   gl.clear(gl.COLOR_BUFFER_BIT);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
