@@ -60,8 +60,16 @@ gl.shaderSource(
     }
 
     float sphereAndCylinders(vec3 p) {
+      //p.x = mod(p.x, 40.0) - 20.0;
+      //p.y = mod(p.y-1.0*time, 40.0) - 20.0;
       p = p.zyx;
+
+      float heartbeat = 0.5 * sin(1.0 * PI * 1.0 * time) + 0.5;
+      heartbeat = mix(1.0, 15.0, heartbeat);
+
       float n = 14.0;
+      float r1 = 30.0 + 0.05 * heartbeat;
+      p = rotateY(p, -PI*0.01*time);
 
       float r = length(p);
 
@@ -69,10 +77,9 @@ gl.shaderSource(
       float th = acos(p.z/r);
 
       float s2 = 1.0e6;
-      for (float i = 0.25; i < 6.0; i++) {
-        float xr = r/n * (sin(th)*sin(n*th)* cos(n*ph)-0.2*i);
-        //float yr = r/n * (sin(th)*sin(n*th)* sin(n*ph)-0.0);
-        float zr = r-30.0-clamp(r-30.0,0.0,1.5*i);
+      for (float i = 0.25; i < heartbeat; i++) {
+        float xr = r/n * (sin(th)*sin(n*th)* cos(n*ph)-0.125*i);
+        float zr = r-r1-clamp(r-r1,0.0,1.*i);
 
         s2 = min(s2,length(vec3(xr,0.0,zr))-0.1);
       }
@@ -158,7 +165,7 @@ gl.shaderSource(
     }
 
     float sceneSDF(in vec3 p) {
-      return sphereSpheres(p);
+      return sphereAndCylinders(p);
     }
 
     vec3 calculateNormal(in vec3 p) {
@@ -199,19 +206,54 @@ gl.shaderSource(
         total_distance_traveled += distance_to_closest;
       }
 
-      return 0.25;
+      return 0.0;
+    }
+
+    vec3 palette(float t) {
+      vec3 a = vec3(0.5, 0.5, 0.5);
+      vec3 b = vec3(0.5, 0.5, 0.5);
+      vec3 c = vec3(1.0, 1.0, 1.0);
+      vec3 d = vec3(0.263, 0.416, 0.557);
+
+      return a + b*cos(6.28318*(c*t+d));
     }
 
     void main() {
       vec2 uv = (gl_FragCoord.xy - 0.5 * resolution) * 2.0 / min(resolution.y, resolution.x);
 
-      vec3 camera_position = vec3(0.0,0.0,-70.0);
+      vec2 uv0 = uv;
+      vec3 finalColor = vec3(0.0);
+      outColor = vec4(0.1, 0.1, 0.1, 1.0);
+
+      vec3 camera_position = vec3(0.0,0.0,-60.0);
       vec3 ro = camera_position;
       vec3 rd = normalize(vec3(uv, 1.0));
 
-      vec3 color = vec3(rayMarch(ro, rd));
+      float r = rayMarch(ro, rd);
+      if (r == 0.0) {
+        return;
+      }
 
-      outColor = vec4(color, 1.0);
+      for (float i = 0.0; i < 4.0; i++) {
+        uv = fract(uv*(1.5+r))-0.5-r;
+        r = 0.0;
+
+        float d = length(uv)*exp(-length(uv0));
+        //d = r;
+
+        vec3 col = palette(length(uv0) + i*.4+time*.4);
+
+        float heartbeat = 0.5 * sin(1.0 * PI * 1.0 * time) + 0.5;
+        heartbeat = mix(0.05, 0.95, heartbeat);
+
+        d = sin(d*8.+.25*time+heartbeat)/8.;
+        d = abs(d);
+        d = pow(0.01/d, 1.2);
+
+        finalColor += col*d*heartbeat;
+      }
+
+      outColor = vec4(finalColor, 1.0);
     }
 `
 );
@@ -259,7 +301,7 @@ function render(time) {
   gl.clear(gl.COLOR_BUFFER_BIT);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
-  //requestAnimationFrame(render);
+  requestAnimationFrame(render);
 }
 
 function resize() {
